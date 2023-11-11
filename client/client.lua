@@ -12,25 +12,18 @@ local blips = {}
 CreateThread(function()
   for jobName, jobBlips in pairs(Config.Blips) do
     for i, blipData in pairs(jobBlips) do
-
       local blip = AddBlipForCoord(blipData.coords)
       SetBlipSprite(blip, blipData.sprite)
       SetBlipDisplay(blip, blipData.display)
       SetBlipScale(blip, blipData.size)
-      SetBlipColour(blip, 39)
       SetBlipAsShortRange(blip, blipData.shortRange)
-      
-      if Config.ChangeBlipText.enable then
-        BeginTextCommandSetBlipName("STRING")
-        AddTextComponentString(Config.ChangeBlipText.offDuty..' '..blipData.label)
-        EndTextCommandSetBlipName(blip)
-      else
-        BeginTextCommandSetBlipName("STRING")
-        AddTextComponentString(blipData.label)
-        EndTextCommandSetBlipName(blip)
-      end
 
-      if Config.Debug then print('^2[Blip Created]:^7 '..jobName..' | coords: '..blipData.coords..' | label: '..blipData.label..' | sprite: '..blipData.sprite..' | size: '..blipData.size..' | color: '..blipData.color..' | display: '..blipData.display..' | shortRange: '..(blipData.shortRange and 'true' or 'false')) end
+      SetBlipColour(blip, 39)
+      BeginTextCommandSetBlipName("STRING")
+      AddTextComponentString(Config.ChangeBlipText.enable and (Config.ChangeBlipText.offDuty..' '..blipData.label) or blipData.label)
+      EndTextCommandSetBlipName(blip)
+      SetBlipAlpha(blip, blipData.hideOffDuty and 0 or 255)
+      if Config.Debug then print('^2[Blip ('..blip..') Created]:^7 '..jobName..' | coords: '..blipData.coords..' | label: '..blipData.label..' | sprite: '..blipData.sprite..' | size: '..blipData.size..' | color: '..blipData.color..' | display: '..blipData.display..' | shortRange: '..(blipData.shortRange and 'true' or 'false')) end
       blips[jobName.."_"..i] = blip
     end
   end
@@ -43,24 +36,18 @@ end)
 ---------------------------
 RegisterNetEvent('sg-liveblips:client:updateBlip', function(jobName, hasOnDuty)
   local jobBlips = Config.Blips[jobName]
+  if Config.Debug then print('Update Blip Started', jobName, hasOnDuty) end
   if jobBlips then
     for i, blipData in pairs(jobBlips) do
       local blip = blips[jobName..'_'..i]
-      if hasOnDuty then
-        SetBlipColour(blip, blipData.color)
-        if Config.ChangeBlipText.enable then
-          BeginTextCommandSetBlipName("STRING")
-          AddTextComponentString(Config.ChangeBlipText.onDuty..' '..blipData.label)
-          EndTextCommandSetBlipName(blip)
-        end
-      else
-        SetBlipColour(blip, 39)
-        if Config.ChangeBlipText.enable then
-          BeginTextCommandSetBlipName("STRING")
-          AddTextComponentString(Config.ChangeBlipText.offDuty..' '..blipData.label)
-          EndTextCommandSetBlipName(blip)
-        end
-      end
+      local statusText = (hasOnDuty and Config.ChangeBlipText.onDuty or Config.ChangeBlipText.offDuty) .. ' ' .. blipData.label
+
+      SetBlipColour(blip, hasOnDuty and blipData.color or 39)
+      BeginTextCommandSetBlipName("STRING")
+      AddTextComponentString(Config.ChangeBlipText.enable and statusText or blipData.label)
+      EndTextCommandSetBlipName(blip)
+      SetBlipAlpha(blip, blipData.hideOffDuty and (hasOnDuty and 255 or 0) or 255)
+      if Config.Debug then print('Blip ['..blip..'] has been updated') end
     end
   end
 end)
@@ -86,7 +73,7 @@ RegisterNetEvent('QBCore:Client:OnPlayerLoaded', function()
       return
     end
   end
-  TriggerServerEvent('sg-liveblips:server:updateBlips')
+  TriggerServerEvent('sg-liveblips:server:getInitialBlips')
 end)
 
 AddEventHandler('onResourceStart', function(resource)
@@ -102,16 +89,14 @@ AddEventHandler('onResourceStart', function(resource)
       return
     end
   end
-  TriggerServerEvent('sg-liveblips:server:updateBlips')
+  TriggerServerEvent('sg-liveblips:server:getInitialBlips')
 end)
 
 AddEventHandler('onResourceStop', function(resource)
 	if resource == GetCurrentResourceName() then
     for i = 1, #blips do
-      if DoesBlipExist(blips[i]) then
-        RemoveBlip(blip[i])
-        if Config.Debug then print('Blip '..blip[i]..' removed.') end
-      end
+      RemoveBlip(blip[i])
+      if Config.Debug then print('Blip '..blip[i]..' removed.') end
     end
 	end
 end)

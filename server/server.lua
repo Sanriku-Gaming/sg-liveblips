@@ -34,7 +34,7 @@ function updateAllJobBlips()
         break
       end
     end
-    
+
     if Config.Debug then print('Job: ', jobName, 'Current: ', jobOnDuty[jobName], 'Status: ', hasOnDuty) end
     if hasOnDuty ~= jobOnDuty[jobName] then
       TriggerClientEvent('sg-liveblips:client:updateBlip', -1, jobName, hasOnDuty)
@@ -77,8 +77,10 @@ CreateThread(function()
         if Config.Debug then print('All Blips Updated and queuedJobs[\'FULL_UPDATE\'] = false ') end
       else
         for job, _ in pairs(queuedJobs) do
-          updateJobBlip(job)
-          queuedJobs[job] = false
+          if queuedJobs[job] then
+            updateJobBlip(job)
+            queuedJobs[job] = false
+          end
         end
         if Config.Debug then print('Job Blips Updated and queuedJobs[\'job\'] = false') end
       end
@@ -92,8 +94,24 @@ end)
 ---------------------------
 RegisterNetEvent('sg-liveblips:server:updateBlips', function()
   if Config.Debug then print('Update Blips Triggered') end
-  -- Queue full update
   jobUpdateQueue('FULL_UPDATE')
+end)
+
+RegisterServerEvent('sg-liveblips:server:getInitialBlips', function()
+  local src = source
+  local Player = QBCore.Functions.GetPlayer(src)
+  if not Player then return end
+  local job = Player.PlayerData.job
+
+  for jobName, isOnDuty in pairs(jobOnDuty) do
+    if isOnDuty then
+      TriggerClientEvent('sg-liveblips:client:updateBlip', src, jobName, isOnDuty)
+    end
+  end
+  if not jobOnDuty[job.name] and job.onDuty then
+    jobUpdateQueue(job)
+  end
+  if Config.Debug then print('Player ['..src..']('..Player.PlayerData.citizenid..') with job '..job.name..' loaded and blips updated.') end
 end)
 
 --------------------------
@@ -105,9 +123,9 @@ RegisterNetEvent('QBCore:ToggleDuty', function()
   local src = source
   local Player = QBCore.Functions.GetPlayer(src)
   if not Player then return end
-  local job = Player.PlayerData.job.name
-  if Config.Debug then print('ToggleDuty:'..job, Player.PlayerData.job.onduty) end
-  jobUpdateQueue(job)
+  local job = Player.PlayerData.job
+  if Config.Debug then print('ToggleDuty: '..job.name, job.onduty) end
+  jobUpdateQueue(job.name)
 end)
 
 -- Build local tables on start
@@ -126,4 +144,5 @@ AddEventHandler('onResourceStart', function(resource)
     end
   end
   queuedJobs['FULL_UPDATE'] = false
+  updateAllJobBlips()
 end)
