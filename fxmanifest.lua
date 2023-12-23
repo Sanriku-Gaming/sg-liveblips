@@ -4,7 +4,7 @@ game 'gta5'
 name 'Live Blips'
 author 'Nicky - SG Scripts'
 description 'Easily configureable live job blip system'
-version '1.1.0'
+version '1.2.0'
 
 client_scripts {
 	'client/*'

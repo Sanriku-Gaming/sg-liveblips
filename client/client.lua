@@ -20,7 +20,7 @@ CreateThread(function()
 
       SetBlipColour(blip, 39)
       BeginTextCommandSetBlipName("STRING")
-      AddTextComponentString(Config.ChangeBlipText.enable and (Config.ChangeBlipText.offDuty..' '..blipData.label) or blipData.label)
+      AddTextComponentString(blipData.changeBlipText and (Config.ChangeBlipText.offDuty..' '..blipData.label) or blipData.label)
       EndTextCommandSetBlipName(blip)
       SetBlipAlpha(blip, blipData.hideOffDuty and 0 or 255)
       if Config.Debug then print('^2[Blip ('..blip..') Created]:^7 '..jobName..' | coords: '..blipData.coords..' | label: '..blipData.label..' | sprite: '..blipData.sprite..' | size: '..blipData.size..' | color: '..blipData.color..' | display: '..blipData.display..' | shortRange: '..(blipData.shortRange and 'true' or 'false')) end
@@ -41,10 +41,9 @@ RegisterNetEvent('sg-liveblips:client:updateBlip', function(jobName, hasOnDuty)
     for i, blipData in pairs(jobBlips) do
       local blip = blips[jobName..'_'..i]
       local statusText = (hasOnDuty and Config.ChangeBlipText.onDuty or Config.ChangeBlipText.offDuty) .. ' ' .. blipData.label
-
       SetBlipColour(blip, hasOnDuty and blipData.color or 39)
       BeginTextCommandSetBlipName("STRING")
-      AddTextComponentString(Config.ChangeBlipText.enable and statusText or blipData.label)
+      AddTextComponentString(blipData.changeBlipText and statusText or blipData.label)
       EndTextCommandSetBlipName(blip)
       SetBlipAlpha(blip, blipData.hideOffDuty and (hasOnDuty and 255 or 0) or 255)
       if Config.Debug then print('Blip ['..blip..'] has been updated') end
